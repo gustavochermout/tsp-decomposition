@@ -84,6 +84,38 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
     return rectangle;
 }
 
+#define K 10
+#define INF 0x3f3f3f3f3f3f3fLL
+double graph[K][K], memo[K][1 << K], visited[K][1 << K];
+
+double tspSolve(int id, int bitmask, int size){
+	if (__builtin_popcount(bitmask) == size)
+		return graph[id][0];
+
+    double &ans = memo[id][bitmask];
+		
+	if (visited[id][bitmask])
+		return ans;
+		
+    visited[id][bitmask] = 1;
+    ans = INF;    
+	
+	for(int i = 0; i < size; i++)
+		if (!(bitmask & (1 << i)))
+			ans = min(ans, graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size));
+			
+	return ans;			
+}
+
+void buildGraph(vector<Point> points){
+    memset(visited, 0, sizeof visited);
+    memset(graph, 0, sizeof graph);
+
+    for (int i = 0; i < points.size(); i++)
+        for (int j = i + 1; j < points.size(); j++)
+            graph[i][j] = graph[j][i] = hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+}
+
 int main(int argc, char *argv[]){
     readInstance(argv);
     Node node = Node(NULL, getRectangleAroundPoints(instance));
