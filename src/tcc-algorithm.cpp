@@ -3,10 +3,10 @@
 using namespace std;
 
 struct Point { 
-    double x; 
-    double y;
+    int x; 
+    int y;
     Point() {} 
-    Point(double _x, double _y) { 
+    Point(int _x, int _y) { 
         x = _x; 
         y = _y; 
     } 
@@ -45,7 +45,48 @@ struct Node {
     }
 };
 
-int main(){
-  
-  return 0;   
+vector<Point> instance;
+int N;
+#define READ_FILE false
+
+void readInstance(char *argv[]){
+    int x, y, id;
+    instance.clear();
+
+    FILE *entrada;
+    entrada = fopen(argv[1], "rt");
+
+    if (READ_FILE)
+        fscanf(entrada, "%d", &N);
+    else
+        scanf("%d", &N);
+
+    for (int i = 0; i < N; i++){
+        if (READ_FILE)
+            fscanf(entrada, "%d %d %d", &id, &x, &y);
+        else
+            scanf("%d %d", &x, &y);
+        
+        instance.push_back(Point(x, y));
+    }
+}
+
+Rectangle getRectangleAroundPoints(vector<Point> points){
+    Rectangle rectangle = Rectangle(INT_MAX, INT_MIN, INT_MIN, INT_MAX);
+
+    for (int i = 0; i < points.size(); i++){
+        rectangle.left = min(rectangle.left, points[i].x - 1);
+        rectangle.right = max(rectangle.right, points[i].x + 1);
+        rectangle.top = max(rectangle.top, points[i].y + 1);
+        rectangle.bottom = min(rectangle.bottom, points[i].y - 1);
+    }
+
+    return rectangle;
+}
+
+int main(int argc, char *argv[]){
+    readInstance(argv);
+    Node node = Node(NULL, getRectangleAroundPoints(instance));
+
+    return 0;   
 }
