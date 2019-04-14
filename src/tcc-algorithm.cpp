@@ -41,7 +41,11 @@ struct Node {
         cost = 0.000;        
     }
     bool isLeaf(){
-        return (child[0] == NULL);
+        for (int i = 0; i < 8; i++)
+            if (child[i] != NULL)
+                return true;
+        
+        return false;
     }
 };
 
@@ -136,6 +140,18 @@ vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle
     }
 
     return pointsInsideRectangle;
+}
+
+vector<Rectangle> getChildRectangles(Rectangle rectangle){
+    //building
+    int middlehorizontal = (rectangle.left + rectangle.right) / 2; 
+    int middleVertical = (rectangle.bottom + rectangle.top) / 2;
+
+    vector<Rectangle> childRectangles;
+    childRectangles.push_back(Rectangle(rectangle.left, (rectangle.left + middlehorizontal) / 2, 
+        rectangle.top, (rectangle.top + middleVertical) / 2));
+
+    return childRectangles;
 }
 
 void buildTree(Node *node){
