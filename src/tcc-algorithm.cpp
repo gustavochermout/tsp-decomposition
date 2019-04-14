@@ -116,9 +116,36 @@ void buildGraph(vector<Point> points){
             graph[i][j] = graph[j][i] = hypot(points[i].x - points[j].x, points[i].y - points[j].y);
 }
 
+double closestPointPairsBetweenTwoSets(vector<Point> setU, vector<Point> setV){
+    double distance = INF;
+    
+    for (int i = 0; i < setU.size(); i++)
+        for (int j = 0; j < setV.size(); j++)
+            distance = min(distance, hypot(setU[i].x - setV[j].x, setU[i].y - setV[j].y));
+    
+    return distance;
+}
+
+vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle){
+    vector<Point> pointsInsideRectangle;
+
+    for (int i = 0; i < points.size(); i++){
+        if ((points[i].x > rectangle.left) && (points[i].x <= rectangle.right) && 
+            (points[i].y > rectangle.bottom) && (points[i].y <= rectangle.top))
+            pointsInsideRectangle.push_back(points[i]);
+    }
+
+    return pointsInsideRectangle;
+}
+
+void buildTree(Node *node){
+    
+}
+
 int main(int argc, char *argv[]){
     readInstance(argv);
     Node node = Node(NULL, getRectangleAroundPoints(instance));
+    buildTree(&node);
 
     return 0;   
 }
