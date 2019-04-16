@@ -142,14 +142,26 @@ vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle
     return pointsInsideRectangle;
 }
 
+int getMiddleSegment(int start, int end){
+    return ((start + end) / 2);
+}
+
+Rectangle returnTopRectangle(Rectangle rectangle, int left, int right){
+    return Rectangle(left, right, rectangle.top, getMiddleSegment(rectangle.top, rectangle.bottom));
+}
+
+Rectangle returnDownRectangle(Rectangle rectangle, int left, int right){
+    return Rectangle(left, right, getMiddleSegment(rectangle.top, rectangle.bottom) + 1, rectangle.bottom);
+}
+
 vector<Rectangle> getChildRectangles(Rectangle rectangle){
     //building
-    int middlehorizontal = (rectangle.left + rectangle.right) / 2; 
-    int middleVertical = (rectangle.bottom + rectangle.top) / 2;
+    int middleHorizontal = getMiddleSegment(rectangle.left, rectangle.right); 
+    int middleVertical = getMiddleSegment(rectangle.bottom, rectangle.top);
 
     vector<Rectangle> childRectangles;
-    childRectangles.push_back(Rectangle(rectangle.left, (rectangle.left + middlehorizontal) / 2, 
-        rectangle.top, (rectangle.top + middleVertical) / 2));
+    childRectangles.push_back(returnTopRectangle(rectangle, rectangle.left, getMiddleSegment(rectangle.left, middleHorizontal)));
+    childRectangles.push_back(returnTopRectangle(rectangle, getMiddleSegment(rectangle.left, middleHorizontal) + 1, middleHorizontal));
 
     return childRectangles;
 }
