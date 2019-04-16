@@ -154,14 +154,39 @@ Rectangle returnDownRectangle(Rectangle rectangle, int left, int right){
     return Rectangle(left, right, getMiddleSegment(rectangle.top, rectangle.bottom) + 1, rectangle.bottom);
 }
 
+pair<int, int> getFirstRectangle(Rectangle rectangle, int middleHorizontal){
+    return pair<int, int>(rectangle.left, getMiddleSegment(rectangle.left, middleHorizontal));
+}
+
+pair<int, int> getSecondRectangle(Rectangle rectangle, int middleHorizontal){
+    return pair<int, int>(getMiddleSegment(rectangle.left, middleHorizontal) + 1, middleHorizontal);
+}
+
+pair<int, int> getThirdRectangle(Rectangle rectangle, int middleHorizontal){
+    return pair<int, int>(middleHorizontal + 1, getMiddleSegment(middleHorizontal, rectangle.right));
+}
+
+pair<int, int> getFourthRectangle(Rectangle rectangle, int middleHorizontal){
+    return pair<int, int>(getMiddleSegment(middleHorizontal, rectangle.right) + 1, rectangle.right);
+}
+
 vector<Rectangle> getChildRectangles(Rectangle rectangle){
-    //building
     int middleHorizontal = getMiddleSegment(rectangle.left, rectangle.right); 
-    int middleVertical = getMiddleSegment(rectangle.bottom, rectangle.top);
+    pair<int, int> firstRectangle = getFirstRectangle(rectangle, middleHorizontal);
+    pair<int, int> secondRectangle = getSecondRectangle(rectangle, middleHorizontal);
+    pair<int, int> thirdRectangle = getThirdRectangle(rectangle, middleHorizontal);
+    pair<int, int> fourthRectangle = getFourthRectangle(rectangle, middleHorizontal);
 
     vector<Rectangle> childRectangles;
-    childRectangles.push_back(returnTopRectangle(rectangle, rectangle.left, getMiddleSegment(rectangle.left, middleHorizontal)));
-    childRectangles.push_back(returnTopRectangle(rectangle, getMiddleSegment(rectangle.left, middleHorizontal) + 1, middleHorizontal));
+    childRectangles.push_back(returnTopRectangle(rectangle, firstRectangle.first, firstRectangle.second));
+    childRectangles.push_back(returnTopRectangle(rectangle, secondRectangle.first, secondRectangle.second));
+    childRectangles.push_back(returnTopRectangle(rectangle, thirdRectangle.first, thirdRectangle.second));
+    childRectangles.push_back(returnTopRectangle(rectangle, fourthRectangle.first, fourthRectangle.second));
+    
+    childRectangles.push_back(returnDownRectangle(rectangle, firstRectangle.first, firstRectangle.second));
+    childRectangles.push_back(returnDownRectangle(rectangle, secondRectangle.first, secondRectangle.second));
+    childRectangles.push_back(returnDownRectangle(rectangle, thirdRectangle.first, thirdRectangle.second));
+    childRectangles.push_back(returnDownRectangle(rectangle, fourthRectangle.first, fourthRectangle.second));
 
     return childRectangles;
 }
