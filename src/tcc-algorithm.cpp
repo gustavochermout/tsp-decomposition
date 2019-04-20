@@ -85,6 +85,9 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
         rectangle.bottom = min(rectangle.bottom, points[i].y - 1);
     }
 
+    rectangle.right = ((rectangle.right - rectangle.left) >= 4) ? rectangle.right : rectangle.left + 4;
+    rectangle.top = ((rectangle.top - rectangle.bottom) >= 4) ? rectangle.top : rectangle.bottom + 4;
+ 
     return rectangle;
 }
 
@@ -151,7 +154,7 @@ Rectangle getTopRectangle(Rectangle rectangle, int left, int right){
 }
 
 Rectangle getDownRectangle(Rectangle rectangle, int left, int right){
-    return Rectangle(left, right, getMiddleSegment(rectangle.top, rectangle.bottom) + 1, rectangle.bottom);
+    return Rectangle(left, right, getMiddleSegment(rectangle.top, rectangle.bottom), rectangle.bottom);
 }
 
 pair<int, int> getFirstRectangle(Rectangle rectangle, int middleHorizontal){
@@ -159,15 +162,15 @@ pair<int, int> getFirstRectangle(Rectangle rectangle, int middleHorizontal){
 }
 
 pair<int, int> getSecondRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(getMiddleSegment(rectangle.left, middleHorizontal) + 1, middleHorizontal);
+    return pair<int, int>(getMiddleSegment(rectangle.left, middleHorizontal), middleHorizontal);
 }
 
 pair<int, int> getThirdRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(middleHorizontal + 1, getMiddleSegment(middleHorizontal, rectangle.right));
+    return pair<int, int>(middleHorizontal, getMiddleSegment(middleHorizontal, rectangle.right));
 }
 
 pair<int, int> getFourthRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(getMiddleSegment(middleHorizontal, rectangle.right) + 1, rectangle.right);
+    return pair<int, int>(getMiddleSegment(middleHorizontal, rectangle.right), rectangle.right);
 }
 
 vector<Rectangle> getChildRectangles(Rectangle rectangle){
