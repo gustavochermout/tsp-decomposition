@@ -12,6 +12,10 @@ struct Point {
     } 
 }; 
 
+bool operator==(Point a, Point b){
+    return ((a.x == b.x) && (a.y == b.y));
+}
+
 struct Rectangle {
     int left, right, top, bottom;
     Rectangle(){}
@@ -194,12 +198,24 @@ vector<Rectangle> getChildRectangles(Rectangle rectangle){
     return childRectangles;
 }
 
+vector<Point> removeOverlappingPoints(vector<Point> points){
+    for (int i = 0; i < points.size(); i++)
+        for (int j = i + 1; j < points.size(); j++)
+            if (points[i] == points[j]){
+                points.erase(points.begin() + i), i--;
+                break;
+            }
+        
+    return points;
+}
+
 void buildTree(Node *node){
     
 }
 
 int main(int argc, char *argv[]){
     readInstance(argv);
+    instance = removeOverlappingPoints(instance);
     Node node = Node(NULL, getRectangleAroundPoints(instance));
     buildTree(&node);
 
