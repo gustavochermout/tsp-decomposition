@@ -5,7 +5,10 @@ using namespace std;
 struct Point { 
     int x; 
     int y;
-    Point() {} 
+    Point() {
+        x = 0;
+        y = 0;
+    } 
     Point(int _x, int _y) { 
         x = _x; 
         y = _y; 
@@ -55,6 +58,17 @@ struct Node {
     }
     vector<Point> getParentPoints(){
         return (parent != NULL) ? parent->points : instance;
+    }
+    double getCost(){
+        double finalCost = cost;
+        
+        for (int i = 0; i < 8; i++)
+            if (child[i] != NULL){
+                finalCost -= hypot(child[i]->start.x - child[i]->end.x, child[i]->start.y - child[i]->end.y);
+                finalCost += child[i]->getCost();
+            }
+
+        return finalCost;
     }
 };
 
@@ -252,5 +266,6 @@ int main(int argc, char *argv[]){
     Node node = Node(NULL, getRectangleAroundPoints(instance));
     buildTree(&node, 0);
     showTree(&node, 1, 0);
+    printf("%.2lf\n", node.getCost());
     return 0;   
 }
