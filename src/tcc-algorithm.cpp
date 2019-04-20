@@ -136,7 +136,7 @@ double tspSolve(int id, int bitmask, int size){
 	return ans;			
 }
 
-void buildGraph(vector<Point> points){
+void buildGraphUsingPoints(vector<Point> points){
     memset(visited, 0, sizeof visited);
     memset(graph, 0, sizeof graph);
 
@@ -153,6 +153,15 @@ double closestPointPairsBetweenTwoSets(vector<Point> setU, vector<Point> setV){
             distance = min(distance, hypot(setU[i].x - setV[j].x, setU[i].y - setV[j].y));
     
     return distance;
+}
+
+void buildGraphUsingNodes(vector<Node*> nodes){
+    memset(visited, 0, sizeof visited);
+    memset(graph, 0, sizeof graph);
+
+    for (int i = 0; i < nodes.size(); i++)
+        for (int j = i + 1; j < nodes.size(); j++)
+            graph[i][j] = graph[j][i] = closestPointPairsBetweenTwoSets(nodes[i]->points, nodes[j]->points);
 }
 
 vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle){
@@ -256,6 +265,13 @@ void showTree(Node *node, int level, int child){
             showTree(node->child[i], level + 1, i);
 }
 
+void buildSolution(Node *node){
+    if (node->isLeaf()){
+        buildGraphUsingPoints(node->points);
+        node->cost = tspSolve(0, 0, node->points.size());
+    }
+}
+
 int main(int argc, char *argv[]){
     readInstance(argv);
     
@@ -266,6 +282,9 @@ int main(int argc, char *argv[]){
     Node node = Node(NULL, getRectangleAroundPoints(instance));
     buildTree(&node, 0);
     showTree(&node, 1, 0);
+    buildSolution(&node);
+    
     printf("%.2lf\n", node.getCost());
+    
     return 0;   
 }
