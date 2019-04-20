@@ -27,6 +27,8 @@ struct Rectangle {
     }
 };
 
+vector<Point> instance;
+
 struct Node {
     Node *parent, *child[8];
     vector<Point> points;
@@ -47,13 +49,15 @@ struct Node {
     bool isLeaf(){
         for (int i = 0; i < 8; i++)
             if (child[i] != NULL)
-                return true;
+                return false;
         
-        return false;
+        return true;
+    }
+    vector<Point> getParentPoints(){
+        return (parent != NULL) ? parent->points : instance;
     }
 };
 
-vector<Point> instance;
 int N;
 #define READ_FILE false
 
@@ -209,15 +213,44 @@ vector<Point> removeOverlappingPoints(vector<Point> points){
     return points;
 }
 
-void buildTree(Node *node){
-    
+void buildTree(Node *node, int idChild){
+    vector<Rectangle> rectangleChild = getChildRectangles(node->rectangle);
+    node->points = getPointsInsideRectangle(node->getParentPoints(), node->rectangle);
+
+    if (node->points.size() == 0){
+        node->parent->child[idChild] = NULL;
+    } 
+    else if (node->points.size() > 8){
+        for (int i = 0; i < 8; i++){
+            node->child[i] = new Node(node, rectangleChild[i]);
+            buildTree(node->child[i], i);
+        }
+    }
+}
+
+void showTree(Node *node, int level, int child){
+    printf("---------------------\n");
+    printf("Level: %d | Child: %d | Rectangle: %d %d %d %d | leaf: %d\n", level, child, node->rectangle.left, node->rectangle.right, 
+        node->rectangle.top, node->rectangle.bottom, node->isLeaf());
+    printf("Points: ");
+    for (int i = 0; i < node->points.size(); i++)
+        printf("(%d %d) ", node->points[i].x, node->points[i].y);
+    printf("\n");
+
+    for (int i = 0; i < 8; i++)
+        if (node->child[i] != NULL)
+            showTree(node->child[i], level + 1, i);
 }
 
 int main(int argc, char *argv[]){
     readInstance(argv);
+    
+    if (instance.size() == 0)
+        return 0;
+    
     instance = removeOverlappingPoints(instance);
     Node node = Node(NULL, getRectangleAroundPoints(instance));
-    buildTree(&node);
-
+    buildTree(&node, 0);
+    showTree(&node, 1, 0);
     return 0;   
 }
