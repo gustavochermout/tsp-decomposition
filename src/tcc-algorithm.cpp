@@ -119,7 +119,8 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
 
 #define K 10
 #define INF 0x3f3f3f3f3f3f3fLL
-double graph[K][K], memo[K][1 << K], visited[K][1 << K];
+double graph[K][K], memo[K][1 << K];
+int visited[K][1 << K], path[K][1 << K];
 
 double tspSolve(int id, int bitmask, int size, bool backToSource){
 	if (__builtin_popcount(bitmask) == size)
@@ -134,10 +135,29 @@ double tspSolve(int id, int bitmask, int size, bool backToSource){
     ans = INF;    
 	
 	for(int i = 0; i < size; i++)
-		if (!(bitmask & (1 << i)))
-			ans = min(ans, graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size, backToSource));
-			
+		if (!(bitmask & (1 << i))){
+			double distance = graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size, backToSource);
+            if (distance < ans){
+                ans = distance;
+                path[id][bitmask] = i;
+            } 
+        }
 	return ans;			
+}
+
+vector<int> buildPathTsp(int start, int size){
+    vector<int> rebuildedPath;
+    rebuildedPath.push_back(start);
+    int u = start, bitmask = 0;
+
+    for (int i = 0; i < size - 1; i++){
+        bitmask |= (1<<u);
+        int v = path[u][bitmask];
+        rebuildedPath.push_back(v);
+        v = u;
+    }
+
+    return rebuildedPath;
 }
 
 void buildGraphUsingPoints(vector<Point> points){
