@@ -57,6 +57,9 @@ struct Node {
         
         return true;
     }
+    bool isRoot(){
+        return (parent == NULL);
+    }
     vector<Point> getParentPoints(){
         return (parent != NULL) ? parent->points : instance;
     }
@@ -278,8 +281,10 @@ void showTree(Node *node, int level, int child){
 void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
-        node->cost = tspSolve(0, 0, node->points.size(), true);
+        node->cost = tspSolve(0, 0, node->points.size(), false);
     }else{
+        buildGraphUsingNodes(node);
+        node->cost = tspSolve(0, 0, 8, node->isRoot());
         for (int i = 0; i < 8; i++)
             if (node->child[i] != NULL)
                 buildSolution(node->child[i]);
