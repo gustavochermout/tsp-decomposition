@@ -327,7 +327,17 @@ void buildSolution(Node *node){
     }
 }
 
+void showResults(Node *node, double timeExecution){
+    showTree(node, 1, 0);
+    printf("---------------------\n");
+    printf("Result: %.2lf\n", node->getCost());
+    printf("Time: %.2lf ms\n", timeExecution);
+}
+
 int main(int argc, char *argv[]){
+    clock_t clocks[2];
+    clocks[0] = clock();
+
     readInstance(argv);
     
     if (instance.size() == 0)
@@ -337,9 +347,9 @@ int main(int argc, char *argv[]){
     Node node = Node(NULL, getRectangleAroundPoints(instance));
     buildTree(&node, 0);
     buildSolution(&node);
-    showTree(&node, 1, 0);
+    clocks[1] = clock();
     
-    printf("%.2lf\n", node.getCost());
+    showResults(&node, ((clocks[1] - clocks[0]) * 1000.0 / CLOCKS_PER_SEC));
     
     return 0;   
 }
