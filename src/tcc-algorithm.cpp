@@ -145,7 +145,7 @@ double tspSolve(int id, int bitmask, int size, bool backToSource){
 	return ans;			
 }
 
-vector<int> buildPathTsp(int start, int size){
+vector<int> buildPathTsp(int start, int size, bool backToSource){
     vector<int> rebuildedPath;
     rebuildedPath.push_back(start);
     int u = start, bitmask = 0;
@@ -154,8 +154,11 @@ vector<int> buildPathTsp(int start, int size){
         bitmask |= (1<<u);
         int v = path[u][bitmask];
         rebuildedPath.push_back(v);
-        v = u;
+        u = v;
     }
+
+    if (backToSource)
+        rebuildedPath.push_back(start);
 
     return rebuildedPath;
 }
@@ -298,13 +301,26 @@ void showTree(Node *node, int level, int child){
             showTree(node->child[i], level + 1, i);
 }
 
+void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
+
+}
+
+void adjustOrderOfChildren(Node *node){
+
+}
+
 void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
         node->cost = tspSolve(0, 0, node->points.size(), false);
     }else{
+        if (!(node->isRoot()))
+            adjustOrderOfChildren(node);
+
         buildGraphUsingNodes(node);
         node->cost = tspSolve(0, 0, 8, node->isRoot());
+        setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
+
         for (int i = 0; i < 8; i++)
             if (node->child[i] != NULL)
                 buildSolution(node->child[i]);
