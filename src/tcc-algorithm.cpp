@@ -36,6 +36,7 @@ struct Node {
     Node *parent, *child[8];
     vector<Point> points;
     Rectangle rectangle;
+    Point childStart[8], childEnd[8];
     Point start, end;
     double cost; //non-leaf is (cost of tsp - euclidean distance between start and end point of each leaf)
     Node(){}
@@ -145,23 +146,32 @@ void buildGraphUsingPoints(vector<Point> points){
             graph[i][j] = graph[j][i] = hypot(points[i].x - points[j].x, points[i].y - points[j].y);
 }
 
-double closestPointPairsBetweenTwoSets(vector<Point> setU, vector<Point> setV){
+double closestPointPairsBetweenTwoSets(Node *node, int u, int v){
     double distance = INF;
     
-    for (int i = 0; i < setU.size(); i++)
-        for (int j = 0; j < setV.size(); j++)
-            distance = min(distance, hypot(setU[i].x - setV[j].x, setU[i].y - setV[j].y));
-    
+    for (int i = 0; i < node->child[u]->points.size(); i++)
+        for (int j = 0; j < node->child[v]->points.size(); j++){
+            double x = hypot(node->child[u]->points[i].x - node->child[v]->points[j].x, 
+                node->child[u]->points[i].y - node->child[v]->points[j].y);
+
+            if (x < distance){
+                distance = x;
+                node->child[u]->childEnd[v] = node->child[u]->points[i];
+                node->child[v]->childStart[u] = node->child[v]->points[j];
+            }
+        }
+
     return distance;
 }
 
-void buildGraphUsingNodes(vector<Node*> nodes){
+void buildGraphUsingNodes(Node *node){
     memset(visited, 0, sizeof visited);
     memset(graph, 0, sizeof graph);
 
-    for (int i = 0; i < nodes.size(); i++)
-        for (int j = i + 1; j < nodes.size(); j++)
-            graph[i][j] = graph[j][i] = closestPointPairsBetweenTwoSets(nodes[i]->points, nodes[j]->points);
+    for (int i = 0; i < 8; i++)
+        for (int j = i + 1; j < 8; j++)
+            if (node->child[i] != NULL && node->child[j] != NULL)
+                graph[i][j] = graph[j][i] = closestPointPairsBetweenTwoSets(node, i, j);
 }
 
 vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle){
