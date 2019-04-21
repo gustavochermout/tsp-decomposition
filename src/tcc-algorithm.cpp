@@ -73,7 +73,7 @@ struct Node {
 };
 
 int N;
-#define READ_FILE false
+#define READ_FILE true
 
 void readInstance(char *argv[]){
     int x, y, id;
@@ -253,8 +253,8 @@ void buildTree(Node *node, int idChild){
 
 void showTree(Node *node, int level, int child){
     printf("---------------------\n");
-    printf("Level: %d | Child: %d | Rectangle: %d %d %d %d | leaf: %d\n", level, child, node->rectangle.left, node->rectangle.right, 
-        node->rectangle.top, node->rectangle.bottom, node->isLeaf());
+    printf("Level: %d | Child: %d | Rectangle: %d %d %d %d | Leaf: %d | Cost: %.2lf \n", level, child, node->rectangle.left, node->rectangle.right, 
+        node->rectangle.top, node->rectangle.bottom, node->isLeaf(), node->getCost());
     printf("Points: ");
     for (int i = 0; i < node->points.size(); i++)
         printf("(%d %d) ", node->points[i].x, node->points[i].y);
@@ -269,6 +269,10 @@ void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
         node->cost = tspSolve(0, 0, node->points.size());
+    }else{
+        for (int i = 0; i < 8; i++)
+            if (node->child[i] != NULL)
+                buildSolution(node->child[i]);
     }
 }
 
@@ -281,8 +285,8 @@ int main(int argc, char *argv[]){
     instance = removeOverlappingPoints(instance);
     Node node = Node(NULL, getRectangleAroundPoints(instance));
     buildTree(&node, 0);
-    showTree(&node, 1, 0);
     buildSolution(&node);
+    showTree(&node, 1, 0);
     
     printf("%.2lf\n", node.getCost());
     
