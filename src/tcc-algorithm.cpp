@@ -118,9 +118,9 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
 #define INF 0x3f3f3f3f3f3f3fLL
 double graph[K][K], memo[K][1 << K], visited[K][1 << K];
 
-double tspSolve(int id, int bitmask, int size){
+double tspSolve(int id, int bitmask, int size, bool backToSource){
 	if (__builtin_popcount(bitmask) == size)
-		return graph[id][0];
+		return (backToSource) ? graph[id][0] : 0;
 
     double &ans = memo[id][bitmask];
 		
@@ -132,7 +132,7 @@ double tspSolve(int id, int bitmask, int size){
 	
 	for(int i = 0; i < size; i++)
 		if (!(bitmask & (1 << i)))
-			ans = min(ans, graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size));
+			ans = min(ans, graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size, backToSource));
 			
 	return ans;			
 }
@@ -278,7 +278,7 @@ void showTree(Node *node, int level, int child){
 void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
-        node->cost = tspSolve(0, 0, node->points.size());
+        node->cost = tspSolve(0, 0, node->points.size(), true);
     }else{
         for (int i = 0; i < 8; i++)
             if (node->child[i] != NULL)
