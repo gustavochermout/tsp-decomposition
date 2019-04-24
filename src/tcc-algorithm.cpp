@@ -63,13 +63,19 @@ struct Node {
     vector<Point> getParentPoints(){
         return (parent != NULL) ? parent->points : instance;
     }
-    double getCost(){
+    double getCost(bool showDetails = false, int level = 1){
         double finalCost = cost;
         
         for (int i = 0; i < 8; i++)
             if (child[i] != NULL){
                 finalCost -= hypot(child[i]->start.x - child[i]->end.x, child[i]->start.y - child[i]->end.y);
-                finalCost += child[i]->getCost();
+                
+                if (showDetails)
+                    printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, i, child[i]->start.x, 
+                        child[i]->start.y, child[i]->end.x, child[i]->end.y, hypot(child[i]->start.x - child[i]->end.x, 
+                        child[i]->start.y - child[i]->end.y));
+                
+                finalCost += child[i]->getCost(showDetails, level + 1);
             }
 
         return finalCost;
@@ -183,7 +189,10 @@ double closestPointPairsBetweenTwoSets(Node *node, int u, int v){
             if (x < distance){
                 distance = x;
                 node->child[u]->childEnd[v] = node->child[u]->points[i];
+                node->child[u]->childStart[v] = node->child[u]->points[i];
+
                 node->child[v]->childStart[u] = node->child[v]->points[j];
+                node->child[v]->childEnd[u] = node->child[v]->points[j];
             }
         }
 
@@ -301,12 +310,25 @@ void showTree(Node *node, int level, int child){
             showTree(node->child[i], level + 1, i);
 }
 
-void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
+void adjustOrderOfPoints(Node *node){
 
 }
 
-void adjustOrderOfChildren(Node *node){
+void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){ 
+    int sizeRebuildedPath = rebuildedPath.size();
+    for (int i = (sizeRebuildedPath - 1); i >= 0; i--)
+        if (node->child[rebuildedPath[i]] == NULL)
+            rebuildedPath.erase(rebuildedPath.begin() + i);
+    
+    for (int i = 1; i < rebuildedPath.size(); i++){
+        int u = rebuildedPath[i-1];
+        int v = rebuildedPath[i];
 
+        node->child[u]->end = node->child[u]->childEnd[v];
+        node->child[v]->start = node->child[v]->childStart[u];
+    }
+
+    adjustOrderOfPoints(node);
 }
 
 void buildSolution(Node *node){
@@ -314,12 +336,9 @@ void buildSolution(Node *node){
         buildGraphUsingPoints(node->points);
         node->cost = tspSolve(0, 0, node->points.size(), false);
     }else{
-        if (!(node->isRoot()))
-            adjustOrderOfChildren(node);
-
         buildGraphUsingNodes(node);
         node->cost = tspSolve(0, 0, 8, node->isRoot());
-        setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
+        //setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
 
         for (int i = 0; i < 8; i++)
             if (node->child[i] != NULL)
