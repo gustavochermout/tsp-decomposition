@@ -37,7 +37,7 @@ struct Node {
     vector<Point> points;
     Rectangle rectangle;
     Point childStart[8], childEnd[8];
-    Point start, end;
+    int childIndexStart, childIndexEnd;
     double cost; //non-leaf is (cost of tsp - euclidean distance between start and end point of each leaf)
     Node(){}
     Node(Node *_parent, Rectangle _rectangle){
@@ -49,6 +49,8 @@ struct Node {
         rectangle = _rectangle;
         points.clear();
         cost = 0.000;        
+        childIndexStart = -1; 
+        childIndexEnd = -1;
     }
     bool isLeaf(){
         for (int i = 0; i < 8; i++)
@@ -68,17 +70,32 @@ struct Node {
         
         for (int i = 0; i < 8; i++)
             if (child[i] != NULL){
-                finalCost -= hypot(child[i]->start.x - child[i]->end.x, child[i]->start.y - child[i]->end.y);
+                finalCost -= hypot(child[i]->getStartPoint().x - child[i]->getEndPoint().x, 
+                    child[i]->getStartPoint().y - child[i]->getEndPoint().y);
                 
                 if (showDetails)
-                    printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, i, child[i]->start.x, 
-                        child[i]->start.y, child[i]->end.x, child[i]->end.y, hypot(child[i]->start.x - child[i]->end.x, 
-                        child[i]->start.y - child[i]->end.y));
+                    printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, i, child[i]->getStartPoint().x, 
+                        child[i]->getStartPoint().y, child[i]->getEndPoint().x, child[i]->getEndPoint().y, 
+                        hypot(child[i]->getStartPoint().x - child[i]->getEndPoint().x, 
+                        child[i]->getStartPoint().y - child[i]->getEndPoint().y));
                 
                 finalCost += child[i]->getCost(showDetails, level + 1);
             }
 
         return finalCost;
+    }
+    Point getStartPoint(){
+        if (childIndexStart == -1)
+            return Point(0, 0);
+        return childStart[childIndexStart];
+    }
+    Point getEndPoint(){
+        if (childIndexEnd == -1)
+            return Point(0, 0);
+        return childEnd[childIndexEnd];
+    }
+    bool isInvalidStartAndEndPoint(){
+        return ((getStartPoint() == getEndPoint()) && (points.size() > 1));
     }
 };
 
@@ -310,6 +327,13 @@ void showTree(Node *node, int level, int child){
             showTree(node->child[i], level + 1, i);
 }
 
+void adjustStartAndEndPoints(Node *node){
+    for (int i = 0; i < 8; i++)
+        if ((node->child[i] != NULL) && (node->child[i]->isInvalidStartAndEndPoint())){
+                
+        }
+}
+
 void adjustOrderOfPoints(Node *node){
 
 }
@@ -324,10 +348,11 @@ void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
         int u = rebuildedPath[i-1];
         int v = rebuildedPath[i];
 
-        node->child[u]->end = node->child[u]->childEnd[v];
-        node->child[v]->start = node->child[v]->childStart[u];
+        node->child[u]->childIndexEnd = v;
+        node->child[v]->childIndexStart = u;
     }
 
+    adjustStartAndEndPoints(node);
     adjustOrderOfPoints(node);
 }
 
