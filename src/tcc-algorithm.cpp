@@ -19,6 +19,10 @@ bool operator==(Point a, Point b){
     return ((a.x == b.x) && (a.y == b.y));
 }
 
+double euclideanDistance(Point a, Point b){
+    return hypot(a.x - b.x, a.y - b.y);
+}
+
 struct Rectangle {
     int left, right, top, bottom;
     Rectangle(){}
@@ -65,17 +69,21 @@ struct Node {
     vector<Point> getParentPoints(){
         return (parent != NULL) ? parent->points : instance;
     }
-    double getCost(bool showDetails = false, int level = 1, int idChild = 1){
-        double finalCost = cost - hypot(getStartPoint().x - getEndPoint().x, getStartPoint().y - getEndPoint().y);
+    double getCost(bool showDetails = false, int level = 0, int idChild = 0, int parent = 0){
+        double finalCost = cost;
+        
+        if (childIndexStart != -1 && childIndexEnd != -1)
+            finalCost -= euclideanDistance(getStartPoint(), getEndPoint());
         
         if (showDetails)
-            printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, idChild, 
+            printf("Parent: %d | Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf | Quantity points: %d \n", parent, level, idChild, 
                 getStartPoint().x,  getStartPoint().y, getEndPoint().x, getEndPoint().y,  
-                hypot(getStartPoint().x - getEndPoint().x, getStartPoint().y - getEndPoint().y));
+                (childIndexStart != -1 && childIndexEnd != -1) ? euclideanDistance(getStartPoint(), getEndPoint()) : 0.00,
+                points.size());
                 
         for (int i = 0; i < 8; i++)
             if (child[i] != NULL)    
-                finalCost += child[i]->getCost(showDetails, level + 1, i + 1);
+                finalCost += child[i]->getCost(showDetails, level + 1, i, idChild);
 
         return finalCost;
     }
@@ -90,7 +98,19 @@ struct Node {
         return childEnd[childIndexEnd];
     }
     bool isInvalidStartAndEndPoint(){
-        return ((getStartPoint() == getEndPoint()) && (points.size() > 1));
+        return (childIndexStart != -1) && (childIndexEnd != -1) && ((getStartPoint() == getEndPoint()) && (points.size() > 1));
+    }
+    int indexOfFirstChild(){
+        for (int i = 0; i < 7; i++)
+            if (child[i] != NULL)
+                return i;
+        return -1;
+    }
+    int indexOfLastChild(){
+        for (int i = 7; i >= 0; i--)
+            if (child[i] != NULL)
+                return i;
+        return -1;
     }
 };
 
@@ -187,16 +207,32 @@ void buildGraphUsingPoints(vector<Point> points){
 
     for (int i = 0; i < points.size(); i++)
         for (int j = i + 1; j < points.size(); j++)
-            graph[i][j] = graph[j][i] = hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+            graph[i][j] = graph[j][i] = euclideanDistance(points[i], points[j]);
 }
 
-double closestPointPairsBetweenTwoSets(Node *node, int u, int v){
+struct UsedPointSets {
+    bool removeUsedPoints;
+    Point usedPointU, usedPointV;
+    UsedPointSets(){
+        removeUsedPoints = false;
+    }
+    UsedPointSets(Point _usedPointU, Point _usedPointV){
+        removeUsedPoints = true;
+        usedPointU = _usedPointU;
+        usedPointV = _usedPointV;
+    }
+};
+
+double closestPointPairsBetweenTwoSets(Node *node, int u, int v, UsedPointSets usedPointSets = UsedPointSets()){
     double distance = INF;
     
     for (int i = 0; i < node->child[u]->points.size(); i++)
         for (int j = 0; j < node->child[v]->points.size(); j++){
-            double x = hypot(node->child[u]->points[i].x - node->child[v]->points[j].x, 
-                node->child[u]->points[i].y - node->child[v]->points[j].y);
+            if ((usedPointSets.removeUsedPoints) && 
+                (usedPointSets.usedPointU == node->child[u]->points[i] || usedPointSets.usedPointV == node->child[v]->points[j]))
+                    continue;
+
+            double x = euclideanDistance(node->child[u]->points[i], node->child[v]->points[j]);
 
             if (x < distance){
                 distance = x;
@@ -322,15 +358,74 @@ void showTree(Node *node, int level, int child){
             showTree(node->child[i], level + 1, i);
 }
 
-void adjustStartAndEndPoints(Node *node){
+void SetNewCostNodeAfterAdjusts(Node *node, vector<int> rebuildedPath){
+    node->cost = 0;
+    for (int i = 1; i < rebuildedPath.size(); i++){
+        int u = rebuildedPath[i - 1];
+        int v = rebuildedPath[i];
+
+        node->cost += euclideanDistance(node->child[u]->getStartPoint(), node->child[u]->getEndPoint()) +
+                      euclideanDistance(node->child[u]->getEndPoint(), node->child[v]->getStartPoint());
+    }
+}
+
+bool keepStartPoint(Point startPointU, Point startPointV, Point endPointU, Point endPointV){
+    return euclideanDistance(startPointU, startPointV) < euclideanDistance(endPointU, endPointV);
+}
+
+void adjustStartAndEndPoints(Node *node, vector<int> rebuildedPath){
     for (int i = 0; i < 8; i++)
         if ((node->child[i] != NULL) && (node->child[i]->isInvalidStartAndEndPoint())){
-
+            int u = node->child[i]->childIndexStart;
+            int v = node->child[i]->childIndexEnd;
+            
+            if (keepStartPoint(node->child[u]->getEndPoint(), node->child[i]->getStartPoint(), node->child[i]->getEndPoint(), node->child[v]->getStartPoint())){
+                UsedPointSets usedPointSets = UsedPointSets(node->child[i]->getStartPoint(), node->child[v]->getEndPoint());
+                closestPointPairsBetweenTwoSets(node, i, v, usedPointSets);    
+            }else{
+                UsedPointSets usedPointSets = UsedPointSets(node->child[u]->getStartPoint(), node->child[i]->getEndPoint());
+                closestPointPairsBetweenTwoSets(node, u, i, usedPointSets);
+            }
         }
+
+    SetNewCostNodeAfterAdjusts(node, rebuildedPath);
+}
+
+int indexOfPoint(vector<Point> points, Point point){
+    for (int i = 0; i < points.size(); i++)
+        if (points[i] == point)
+            return i;
+    
+    return -1;
+}
+
+void adjustOrderOfPointsForLeafs(Node *node){
+    if (node->childIndexStart != -1){
+        int indexPoint = indexOfPoint(node->points, node->getStartPoint());
+        swap(node->points[0], node->points[indexPoint]);
+    }
+
+    if (node->childIndexEnd != -1){
+        int indexPoint = indexOfPoint(node->points, node->getEndPoint());
+        swap(node->points[indexPoint], node->points[node->points.size() - 1]);
+    }
+}
+
+void adjustOrderOfPointsForNonLeafs(Node *node){
+    if (node->childIndexStart != -1)
+        swap(node->child[node->indexOfFirstChild()], node->child[node->childIndexStart]);
+    
+    if (node->childIndexEnd != -1)
+        swap(node->child[node->childIndexEnd], node->child[node->indexOfLastChild()]);
 }
 
 void adjustOrderOfPoints(Node *node){
-
+    for (int i = 0; i < 8; i++)
+        if (node->child[i] != NULL) 
+            if (node->child[i]->isLeaf())
+                adjustOrderOfPointsForLeafs(node->child[i]);
+            else
+                adjustOrderOfPointsForNonLeafs(node->child[i]);
 }
 
 void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){ 
@@ -347,7 +442,7 @@ void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
         node->child[v]->childIndexStart = u;
     }
 
-    adjustStartAndEndPoints(node);
+    adjustStartAndEndPoints(node, rebuildedPath);
     adjustOrderOfPoints(node);
 }
 
@@ -358,7 +453,7 @@ void buildSolution(Node *node){
     }else{
         buildGraphUsingNodes(node);
         node->cost = tspSolve(0, 0, 8, node->isRoot());
-        //setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
+        setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
 
         for (int i = 0; i < 8; i++)
             if (node->child[i] != NULL)
