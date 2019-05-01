@@ -65,22 +65,17 @@ struct Node {
     vector<Point> getParentPoints(){
         return (parent != NULL) ? parent->points : instance;
     }
-    double getCost(bool showDetails = false, int level = 1){
-        double finalCost = cost;
+    double getCost(bool showDetails = false, int level = 1, int idChild = 1){
+        double finalCost = cost - hypot(getStartPoint().x - getEndPoint().x, getStartPoint().y - getEndPoint().y);
         
+        if (showDetails)
+            printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, idChild, 
+                getStartPoint().x,  getStartPoint().y, getEndPoint().x, getEndPoint().y,  
+                hypot(getStartPoint().x - getEndPoint().x, getStartPoint().y - getEndPoint().y));
+                
         for (int i = 0; i < 8; i++)
-            if (child[i] != NULL){
-                finalCost -= hypot(child[i]->getStartPoint().x - child[i]->getEndPoint().x, 
-                    child[i]->getStartPoint().y - child[i]->getEndPoint().y);
-                
-                if (showDetails)
-                    printf("Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf\n", level, i, child[i]->getStartPoint().x, 
-                        child[i]->getStartPoint().y, child[i]->getEndPoint().x, child[i]->getEndPoint().y, 
-                        hypot(child[i]->getStartPoint().x - child[i]->getEndPoint().x, 
-                        child[i]->getStartPoint().y - child[i]->getEndPoint().y));
-                
-                finalCost += child[i]->getCost(showDetails, level + 1);
-            }
+            if (child[i] != NULL)    
+                finalCost += child[i]->getCost(showDetails, level + 1, i + 1);
 
         return finalCost;
     }
@@ -330,7 +325,7 @@ void showTree(Node *node, int level, int child){
 void adjustStartAndEndPoints(Node *node){
     for (int i = 0; i < 8; i++)
         if ((node->child[i] != NULL) && (node->child[i]->isInvalidStartAndEndPoint())){
-                
+
         }
 }
 
@@ -374,7 +369,7 @@ void buildSolution(Node *node){
 void showResults(Node *node, double timeExecution){
     showTree(node, 1, 0);
     printf("---------------------\n");
-    printf("Result: %.2lf\n", node->getCost());
+    printf("Result: %.2lf\n", node->getCost(true));
     printf("Time: %.2lf ms\n", timeExecution);
 }
 
