@@ -36,18 +36,25 @@ struct Rectangle {
 
 vector<Point> instance;
 
+#define READ_FILE true
+#define COLUMNS 3
+#define LINES 3
+#define MAX_CHILD (COLUMNS * LINES)
+#define MAX_POINTS_TSP 9
+#define MAX_DP 9
+
 struct Node {
-    Node *parent, *child[8];
+    Node *parent, *child[MAX_CHILD];
     vector<Point> points;
     Rectangle rectangle;
-    Point childStart[8], childEnd[8];
+    Point childStart[MAX_CHILD], childEnd[MAX_CHILD];
     int childIndexStart, childIndexEnd;
     double cost; //non-leaf is (cost of tsp - euclidean distance between start and end point of each leaf)
     Node(){}
     Node(Node *_parent, Rectangle _rectangle){
         parent = _parent;
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < MAX_CHILD; i++)
             child[i] = NULL;
         
         rectangle = _rectangle;
@@ -57,7 +64,7 @@ struct Node {
         childIndexEnd = -1;
     }
     bool isLeaf(){
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < MAX_CHILD; i++)
             if (child[i] != NULL)
                 return false;
         
@@ -81,7 +88,7 @@ struct Node {
                 (childIndexStart != -1 && childIndexEnd != -1) ? euclideanDistance(getStartPoint(), getEndPoint()) : 0.00,
                 points.size());
                 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < MAX_CHILD; i++)
             if (child[i] != NULL)    
                 finalCost += child[i]->getCost(showDetails, level + 1, i, idChild);
 
@@ -101,13 +108,13 @@ struct Node {
         return (childIndexStart != -1) && (childIndexEnd != -1) && ((getStartPoint() == getEndPoint()) && (points.size() > 1));
     }
     int indexOfFirstChild(){
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < MAX_CHILD; i++)
             if (child[i] != NULL)
                 return i;
         return -1;
     }
     int indexOfLastChild(){
-        for (int i = 7; i >= 0; i--)
+        for (int i = (MAX_CHILD - 1); i >= 0; i--)
             if (child[i] != NULL)
                 return i;
         return -1;
@@ -115,7 +122,6 @@ struct Node {
 };
 
 int N;
-#define READ_FILE true
 
 void readInstance(char *argv[]){
     int x, y, id;
@@ -149,16 +155,15 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
         rectangle.bottom = min(rectangle.bottom, points[i].y - 1);
     }
 
-    rectangle.right = ((rectangle.right - rectangle.left) >= 4) ? rectangle.right : rectangle.left + 4;
-    rectangle.top = ((rectangle.top - rectangle.bottom) >= 4) ? rectangle.top : rectangle.bottom + 4;
+    rectangle.right = ((rectangle.right - rectangle.left) >= COLUMNS) ? rectangle.right : rectangle.left + COLUMNS;
+    rectangle.top = ((rectangle.top - rectangle.bottom) >= LINES) ? rectangle.top : rectangle.bottom + LINES;
  
     return rectangle;
 }
 
-#define K 10
 #define INF 0x3f3f3f3f3f3f3fLL
-double graph[K][K], memo[K][1 << K];
-int visited[K][1 << K], path[K][1 << K];
+double graph[MAX_DP][MAX_DP], memo[MAX_DP][1 << MAX_DP];
+int visited[MAX_DP][1 << MAX_DP], path[MAX_DP][1 << MAX_DP];
 
 double tspSolve(int id, int bitmask, int size, bool backToSource){
 	if (__builtin_popcount(bitmask) == size)
@@ -251,8 +256,8 @@ void buildGraphUsingNodes(Node *node){
     memset(visited, 0, sizeof visited);
     memset(graph, 0, sizeof graph);
 
-    for (int i = 0; i < 8; i++)
-        for (int j = i + 1; j < 8; j++)
+    for (int i = 0; i < MAX_CHILD; i++)
+        for (int j = i + 1; j < MAX_CHILD; j++)
             if (node->child[i] != NULL && node->child[j] != NULL)
                 graph[i][j] = graph[j][i] = closestPointPairsBetweenTwoSets(node, i, j);
 }
@@ -269,52 +274,31 @@ vector<Point> getPointsInsideRectangle(vector<Point> points, Rectangle rectangle
     return pointsInsideRectangle;
 }
 
-int getMiddleSegment(int start, int end){
-    return ((start + end) / 2);
-}
-
-Rectangle getTopRectangle(Rectangle rectangle, int left, int right){
-    return Rectangle(left, right, rectangle.top, getMiddleSegment(rectangle.top, rectangle.bottom));
-}
-
-Rectangle getDownRectangle(Rectangle rectangle, int left, int right){
-    return Rectangle(left, right, getMiddleSegment(rectangle.top, rectangle.bottom), rectangle.bottom);
-}
-
-pair<int, int> getFirstRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(rectangle.left, getMiddleSegment(rectangle.left, middleHorizontal));
-}
-
-pair<int, int> getSecondRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(getMiddleSegment(rectangle.left, middleHorizontal), middleHorizontal);
-}
-
-pair<int, int> getThirdRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(middleHorizontal, getMiddleSegment(middleHorizontal, rectangle.right));
-}
-
-pair<int, int> getFourthRectangle(Rectangle rectangle, int middleHorizontal){
-    return pair<int, int>(getMiddleSegment(middleHorizontal, rectangle.right), rectangle.right);
-}
-
 vector<Rectangle> getChildRectangles(Rectangle rectangle){
-    int middleHorizontal = getMiddleSegment(rectangle.left, rectangle.right); 
-    pair<int, int> firstRectangle = getFirstRectangle(rectangle, middleHorizontal);
-    pair<int, int> secondRectangle = getSecondRectangle(rectangle, middleHorizontal);
-    pair<int, int> thirdRectangle = getThirdRectangle(rectangle, middleHorizontal);
-    pair<int, int> fourthRectangle = getFourthRectangle(rectangle, middleHorizontal);
-
     vector<Rectangle> childRectangles;
-    childRectangles.push_back(getTopRectangle(rectangle, firstRectangle.first, firstRectangle.second));
-    childRectangles.push_back(getTopRectangle(rectangle, secondRectangle.first, secondRectangle.second));
-    childRectangles.push_back(getTopRectangle(rectangle, thirdRectangle.first, thirdRectangle.second));
-    childRectangles.push_back(getTopRectangle(rectangle, fourthRectangle.first, fourthRectangle.second));
-    
-    childRectangles.push_back(getDownRectangle(rectangle, firstRectangle.first, firstRectangle.second));
-    childRectangles.push_back(getDownRectangle(rectangle, secondRectangle.first, secondRectangle.second));
-    childRectangles.push_back(getDownRectangle(rectangle, thirdRectangle.first, thirdRectangle.second));
-    childRectangles.push_back(getDownRectangle(rectangle, fourthRectangle.first, fourthRectangle.second));
+    Rectangle rectangleSlide = Rectangle(
+        rectangle.left,
+        rectangle.left,
+        rectangle.bottom,
+        rectangle.bottom
+    );
 
+    int slideHorizontal = (rectangle.right - rectangle.left) / COLUMNS;
+    int slideVertical = (rectangle.top - rectangle.bottom) / LINES; 
+    
+    for (int i = 1; i <= LINES; i++){
+        rectangleSlide.bottom = rectangleSlide.top;
+        rectangleSlide.top = (i == LINES) ? rectangle.top : rectangleSlide.top + slideVertical; 
+        rectangleSlide.left = rectangle.left;
+        rectangleSlide.right = rectangle.left;
+        
+        for (int j = 1; j <= COLUMNS; j++){
+            rectangleSlide.left = rectangleSlide.right;
+            rectangleSlide.right = (j == COLUMNS) ? rectangle.right : rectangleSlide.left + slideHorizontal;
+            childRectangles.push_back(rectangleSlide);
+        }
+    }
+    
     return childRectangles;
 }
 
@@ -336,8 +320,8 @@ void buildTree(Node *node, int idChild){
     if (node->points.size() == 0){
         node->parent->child[idChild] = NULL;
     } 
-    else if (node->points.size() > 8){
-        for (int i = 0; i < 8; i++){
+    else if (node->points.size() > MAX_POINTS_TSP){    
+        for (int i = 0; i < rectangleChild.size(); i++){
             node->child[i] = new Node(node, rectangleChild[i]);
             buildTree(node->child[i], i);
         }
@@ -353,7 +337,7 @@ void showTree(Node *node, int level, int child){
         printf("(%d %d) ", node->points[i].x, node->points[i].y);
     printf("\n");
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < MAX_CHILD; i++)
         if (node->child[i] != NULL)
             showTree(node->child[i], level + 1, i);
 }
@@ -374,16 +358,19 @@ bool keepStartPoint(Point startPointU, Point startPointV, Point endPointU, Point
 }
 
 void adjustStartAndEndPoints(Node *node, vector<int> rebuildedPath){
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < MAX_CHILD; i++)
         if ((node->child[i] != NULL) && (node->child[i]->isInvalidStartAndEndPoint())){
             int u = node->child[i]->childIndexStart;
             int v = node->child[i]->childIndexEnd;
+
+            Point usedPointU = (node->child[u]->points.size() > 1) ? node->child[u]->getStartPoint() : Point(INT_MIN, INT_MAX);
+            Point usedPointV = (node->child[v]->points.size() > 1) ? node->child[v]->getEndPoint() : Point(INT_MIN, INT_MAX);
             
             if (keepStartPoint(node->child[u]->getEndPoint(), node->child[i]->getStartPoint(), node->child[i]->getEndPoint(), node->child[v]->getStartPoint())){
-                UsedPointSets usedPointSets = UsedPointSets(node->child[i]->getStartPoint(), node->child[v]->getEndPoint());
+                UsedPointSets usedPointSets = UsedPointSets(node->child[i]->getStartPoint(), usedPointV);
                 closestPointPairsBetweenTwoSets(node, i, v, usedPointSets);    
             }else{
-                UsedPointSets usedPointSets = UsedPointSets(node->child[u]->getStartPoint(), node->child[i]->getEndPoint());
+                UsedPointSets usedPointSets = UsedPointSets(usedPointU, node->child[i]->getEndPoint());
                 closestPointPairsBetweenTwoSets(node, u, i, usedPointSets);
             }
         }
@@ -420,7 +407,7 @@ void adjustOrderOfPointsForNonLeafs(Node *node){
 }
 
 void adjustOrderOfPoints(Node *node){
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < MAX_CHILD; i++)
         if (node->child[i] != NULL) 
             if (node->child[i]->isLeaf())
                 adjustOrderOfPointsForLeafs(node->child[i]);
@@ -449,13 +436,13 @@ void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
 void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
-        node->cost = tspSolve(0, 0, node->points.size(), false);
+        node->cost = tspSolve(0, 0, node->points.size(), node->isRoot());
     }else{
         buildGraphUsingNodes(node);
-        node->cost = tspSolve(0, 0, 8, node->isRoot());
-        setStartAndEndPointsForChildren(node, buildPathTsp(0, 8, node->isRoot()));
+        node->cost = tspSolve(0, 0, MAX_CHILD, node->isRoot());
+        setStartAndEndPointsForChildren(node, buildPathTsp(0, MAX_CHILD, node->isRoot()));
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < MAX_CHILD; i++)
             if (node->child[i] != NULL)
                 buildSolution(node->child[i]);
     }
