@@ -28,6 +28,7 @@
 
 # Executables
 *.exe
+*.out
 *.app
 .vscode/ipch/67fc304e8f295e29/TCC-ALGORITHM.ipch
 .vscode/ipch/67fc304e8f295e29/mmap_address.bin
