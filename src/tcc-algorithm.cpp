@@ -41,7 +41,7 @@ vector<Point> instance;
 #define LINES 3
 #define MAX_CHILD (COLUMNS * LINES)
 #define MAX_POINTS_TSP 9
-#define MAX_DP 9
+#define MAX_DP 9 // <- Max (MAX_CHILD and MAX_POINTS_TSP)
 
 struct Node {
     Node *parent, *child[MAX_CHILD];
@@ -78,9 +78,6 @@ struct Node {
     }
     double getCost(bool showDetails = false, int level = 0, int idChild = 0, int parent = 0){
         double finalCost = cost;
-        
-        if (childIndexStart != -1 && childIndexEnd != -1)
-            finalCost -= euclideanDistance(getStartPoint(), getEndPoint());
         
         if (showDetails)
             printf("Parent: %d | Level: %d | Child: %d | Start and end: (%d %d) (%d %d) | Distance: %.2lf | Quantity points: %d \n", parent, level, idChild, 
@@ -348,8 +345,7 @@ void SetNewCostNodeAfterAdjusts(Node *node, vector<int> rebuildedPath){
         int u = rebuildedPath[i - 1];
         int v = rebuildedPath[i];
 
-        node->cost += euclideanDistance(node->child[u]->getStartPoint(), node->child[u]->getEndPoint()) +
-                      euclideanDistance(node->child[u]->getEndPoint(), node->child[v]->getStartPoint());
+        node->cost += euclideanDistance(node->child[u]->getEndPoint(), node->child[v]->getStartPoint());
     }
 }
 
@@ -449,9 +445,9 @@ void buildSolution(Node *node){
 }
 
 void showResults(Node *node, double timeExecution){
-    showTree(node, 1, 0);
+    //showTree(node, 1, 0);
     printf("---------------------\n");
-    printf("Result: %.2lf\n", node->getCost(true));
+    printf("Result: %.2lf\n", node->getCost(false));
     printf("Time: %.2lf ms\n", timeExecution);
 }
 
