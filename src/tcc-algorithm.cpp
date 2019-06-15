@@ -49,7 +49,7 @@ struct Node {
     Rectangle rectangle;
     Point childStart[MAX_CHILD], childEnd[MAX_CHILD];
     int childIndexStart, childIndexEnd;
-    double cost; //non-leaf is (cost of tsp - euclidean distance between start and end point of each leaf)
+    double cost;
     Node(){}
     Node(Node *_parent, Rectangle _rectangle){
         parent = _parent;
@@ -162,10 +162,19 @@ Rectangle getRectangleAroundPoints(vector<Point> points){
 double graph[MAX_DP][MAX_DP], memo[MAX_DP][1 << MAX_DP];
 int visited[MAX_DP][1 << MAX_DP], path[MAX_DP][1 << MAX_DP];
 
-double tspSolve(int id, int bitmask, int size, bool backToSource){
-	if (__builtin_popcount(bitmask) == size)
-		return (backToSource) ? graph[id][0] : 0;
-
+double tspSolve(int id, int bitmask, int size, bool backToSource){   
+    int GoToLastPoint = (1 - backToSource);
+	
+    if (__builtin_popcount(bitmask) == (size - GoToLastPoint))
+        if (backToSource){
+            path[id][bitmask] = 0;
+            return graph[id][0];
+        }
+        else{
+            path[id][bitmask] = (size-1);
+            return graph[id][size-1];
+        }
+    
     double &ans = memo[id][bitmask];
 		
 	if (visited[id][bitmask])
@@ -174,7 +183,7 @@ double tspSolve(int id, int bitmask, int size, bool backToSource){
     visited[id][bitmask] = 1;
     ans = INF;    
 	
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < (size - GoToLastPoint); i++)
 		if (!(bitmask & (1 << i))){
 			double distance = graph[id][i] + tspSolve(i, (bitmask | (1 << i)), size, backToSource);
             if (distance < ans){
@@ -397,7 +406,7 @@ void adjustOrderOfPointsForLeafs(Node *node){
 void adjustOrderOfPointsForNonLeafs(Node *node){
     if (node->childIndexStart != -1)
         swap(node->child[node->indexOfFirstChild()], node->child[node->childIndexStart]);
-    
+
     if (node->childIndexEnd != -1)
         swap(node->child[node->childIndexEnd], node->child[node->indexOfLastChild()]);
 }
@@ -429,10 +438,21 @@ void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
     adjustOrderOfPoints(node);
 }
 
+void showStartAndEndPoints(Node *node){
+    vector<int> path = buildPathTsp(0, node->points.size(), node->isRoot());
+    //printf("%d: (%d, %d) (%d, %d) = %d [%d] [%d] [%d]", path[0], node->getStartPoint().x, node->getStartPoint().y, 
+    //    node->points[path[0]].x, node->points[path[0]].y,
+    //    node->getStartPoint() == node->points[path[0]], node->points.size(), node->childIndexStart, path[0]), puts("");
+    printf("(%d, %d) (%d, %d) = %d [%d] [%d] [%d]", node->getEndPoint().x, node->getEndPoint().y, 
+        node->points[path[path.size()-1]].x, node->points[path[path.size()-1]].y,
+        node->getEndPoint() == node->points[path[path.size()-1]], node->points.size(), node->childIndexEnd, path[path.size()-1]), puts("");
+}
+
 void buildSolution(Node *node){
     if (node->isLeaf()){
         buildGraphUsingPoints(node->points);
         node->cost = tspSolve(0, 0, node->points.size(), node->isRoot());
+        //showStartAndEndPoints(node);        
     }else{
         buildGraphUsingNodes(node);
         node->cost = tspSolve(0, 0, MAX_CHILD, node->isRoot());
