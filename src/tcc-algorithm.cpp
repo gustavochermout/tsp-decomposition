@@ -403,12 +403,20 @@ void adjustOrderOfPointsForLeafs(Node *node){
     }
 }
 
+int indexChildContainsPoint(Node *node, Point referencePoint){
+    for (int i = 0; i < MAX_CHILD; i++)
+        if (node->child[i] != NULL && indexOfPoint(node->child[i]->points, referencePoint) != -1)
+            return i;
+
+    return -1;
+}
+
 void adjustOrderOfPointsForNonLeafs(Node *node){
     if (node->childIndexStart != -1)
-        swap(node->child[node->indexOfFirstChild()], node->child[node->childIndexStart]);
-
+        swap(node->child[node->indexOfFirstChild()], node->child[indexChildContainsPoint(node, node->getStartPoint())]);
+        
     if (node->childIndexEnd != -1)
-        swap(node->child[node->childIndexEnd], node->child[node->indexOfLastChild()]);
+        swap(node->child[node->indexOfLastChild()], node->child[indexChildContainsPoint(node, node->getEndPoint())]);
 }
 
 void adjustOrderOfPoints(Node *node){
@@ -425,7 +433,7 @@ void setStartAndEndPointsForChildren(Node *node, vector<int> rebuildedPath){
     for (int i = (sizeRebuildedPath - 1); i >= 0; i--)
         if (node->child[rebuildedPath[i]] == NULL)
             rebuildedPath.erase(rebuildedPath.begin() + i);
-    
+
     for (int i = 1; i < rebuildedPath.size(); i++){
         int u = rebuildedPath[i-1];
         int v = rebuildedPath[i];
@@ -455,7 +463,7 @@ void buildSolution(Node *node){
         //showStartAndEndPoints(node);        
     }else{
         buildGraphUsingNodes(node);
-        node->cost = tspSolve(0, 0, MAX_CHILD, node->isRoot());
+        node->cost = tspSolve(0, 0, (node->indexOfLastChild() + 1), node->isRoot());
         setStartAndEndPointsForChildren(node, buildPathTsp(0, MAX_CHILD, node->isRoot()));
 
         for (int i = 0; i < MAX_CHILD; i++)
