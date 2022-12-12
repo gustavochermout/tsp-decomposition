@@ -1,7 +1,7 @@
 ## 💻 TSP-decomposition
 
 Algoritmo desenvolvido como trabalho de conclusão de curso para obtenção do título de Bacharel em Ciência da
-Computação no Centro Universitário Serra dos Órgãos – UNIFESO, sobre a orientação do professor Rafael Gomes Monteiro.
+Computação no Centro Universitário Serra dos Órgãos – UNIFESO, com a orientação do professor Rafael Gomes Monteiro.
 
 ## Resumo do trabalho
 
